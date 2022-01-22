@@ -1,0 +1,51 @@
+запускаем прогу. Просит пароль
+
+level03@OverRide:~$ ./level03
+***********************************
+*		level03		**
+***********************************
+Password:
+
+
+в main запускаем функцию test с аргументами 0x1337d00d = 322424845 и 0x1c(%esp) - то, что мы вписали
+   0x080488c6 <+108>:	mov    0x1c(%esp),%eax
+   0x080488ca <+112>:	movl   $0x1337d00d,0x4(%esp)
+   0x080488d2 <+120>:	mov    %eax,(%esp)
+   0x080488d5 <+123>:	call   0x8048747 <test>
+
+в test:
+       0x08048755 <+14>:	sub    %eax,%ecx       // 2 арг - 1 арг = delta
+       и запускаем decrypt(delta), если delta 1-0x15 (за исключением нескольких), 
+       иначе аргумент будет рандомным числом
+
+в decrypt:
+        0x08048711 <+177>:	test   %eax,%eax
+        0x08048713 <+179>:	jne    0x8048723 <decrypt+195>
+        0x08048715 <+181>:	movl   $0x80489d4,(%esp)
+        0x0804871c <+188>:	call   0x80484e0 <system@plt>
+
+
+Переберем все числа до delta.
+будем вводить в пароль:
+322424845 -         
+
+for i in {322424824..322424844..1}; do print $i; (echo $i; echo -ne '\n') | /home/users/level03/level03; done
+
+Warning: unknown mime-type for "322424827" -- using "application/octet-stream"
+Error: no such file "322424827"
+***********************************
+*		level03		**
+***********************************
+Password:Warning: unknown mime-type for "322424828" -- using "application/octet-stream"
+
+
+Итог:
+        Водим 322424827
+
+level03@OverRide:~$ ./level03
+***********************************
+*		level03		**
+***********************************
+Password:322424827
+$ cat /home/users/level04/.pass
+kgv3tkEb9h2mLkRsPkXRfc2mHbjMxQzvb2FrgKkf

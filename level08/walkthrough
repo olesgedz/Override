@@ -1,0 +1,8 @@
+Тестриуем бинарник и понимаем, что он копирует файл, название которого переданно аргументом, в backup.
+
+Нам нужно перейти в /tmp и симитировать иерархию файлов со следующего уровня.
+
+cd /tmp
+mkdir -p backups/home/users/level09
+~/level08 /home/users/level09/.pass
+cat backups/home/users/level09/.pass

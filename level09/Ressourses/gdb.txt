@@ -1,0 +1,160 @@
+(gdb) disas
+Dump of assembler code for function main:
+   0x0000555555554aa8 <+0>:	push   %rbp
+   0x0000555555554aa9 <+1>:	mov    %rsp,%rbp
+=> 0x0000555555554aac <+4>:	lea    0x15d(%rip),%rdi        # 0x555555554c10
+        x/s 0x555555554c10
+        0x555555554c10:	 '-' <repeats 44 times>, "\n|   ~Welcome to l33t-m$n ~    v1337        |\n", '-' <repeats 44 times>
+        --------------------------------------------
+        |   ~Welcome to l33t-m$n ~    v1337        |
+        --------------------------------------------
+   0x0000555555554ab3 <+11>:	callq  0x555555554730 <puts@plt>
+   0x0000555555554ab8 <+16>:	callq  0x5555555548c0 <handle_msg>
+   0x0000555555554abd <+21>:	mov    $0x0,%eax
+   0x0000555555554ac2 <+26>:	pop    %rbp
+   0x0000555555554ac3 <+27>:	retq
+End of assembler dump.
+
+
+(gdb) disas
+Dump of assembler code for function handle_msg:
+=> 0x00005555555548c0 <+0>:	push   %rbp
+   0x00005555555548c1 <+1>:	mov    %rsp,%rbp
+   0x00005555555548c4 <+4>:	sub    $0xc0,%rsp
+   0x00005555555548cb <+11>:	lea    -0xc0(%rbp),%rax           
+   0x00005555555548d2 <+18>:	add    $0x8c,%rax                       
+   0x00005555555548d8 <+24>:	movq   $0x0,(%rax)
+   0x00005555555548df <+31>:	movq   $0x0,0x8(%rax)
+   0x00005555555548e7 <+39>:	movq   $0x0,0x10(%rax)
+   0x00005555555548ef <+47>:	movq   $0x0,0x18(%rax)
+   0x00005555555548f7 <+55>:	movq   $0x0,0x20(%rax)                  //memset(-0xc0(%rbp) + 0x8c, 0, 0x28)
+   0x00005555555548ff <+63>:	movl   $0x8c,-0xc(%rbp)                 //-0xc(%rbp)  = 0x8c
+   0x0000555555554906 <+70>:	lea    -0xc0(%rbp),%rax
+   0x000055555555490d <+77>:	mov    %rax,%rdi
+   0x0000555555554910 <+80>:	callq  0x5555555549cd <set_username>    // set_username(-0xc0(%rbp))
+   0x0000555555554915 <+85>:	lea    -0xc0(%rbp),%rax                 // -0xc0(%rbp) = set_username()
+   0x000055555555491c <+92>:	mov    %rax,%rdi
+   0x000055555555491f <+95>:	callq  0x555555554932 <set_msg>         //set_msg(-0xc0(%rbp))
+   0x0000555555554924 <+100>:	lea    0x295(%rip),%rdi        # 0x555555554bc0
+   0x000055555555492b <+107>:	callq  0x555555554730 <puts@plt>        //puts(">: Msg sent!")
+   0x0000555555554930 <+112>:	leaveq
+   0x0000555555554931 <+113>:	retq
+End of assembler dump.
+
+(gdb) disas
+Dump of assembler code for function set_username:
+=> 0x00005555555549cd <+0>:	push   %rbp
+   0x00005555555549ce <+1>:	mov    %rsp,%rbp
+   0x00005555555549d1 <+4>:	sub    $0xa0,%rsp
+   0x00005555555549d8 <+11>:	mov    %rdi,-0x98(%rbp)                     //наш аргумент 
+   0x00005555555549df <+18>:	lea    -0x90(%rbp),%rax
+   0x00005555555549e6 <+25>:	mov    %rax,%rsi
+   0x00005555555549e9 <+28>:	mov    $0x0,%eax
+   0x00005555555549ee <+33>:	mov    $0x10,%edx
+   0x00005555555549f3 <+38>:	mov    %rsi,%rdi
+   0x00005555555549f6 <+41>:	mov    %rdx,%rcx
+   0x00005555555549f9 <+44>:	rep stos %rax,%es:(%rdi)                    //memset(-0x90(%rbp), 0, 0x10)
+   0x00005555555549fc <+47>:	lea    0x1e1(%rip),%rdi        # 0x555555554be4
+   0x0000555555554a03 <+54>:	callq  0x555555554730 <puts@plt>            //put(">: Enter your username")
+   0x0000555555554a08 <+59>:	lea    0x1d0(%rip),%rax        # 0x555555554bdf
+   0x0000555555554a0f <+66>:	mov    %rax,%rdi
+   0x0000555555554a12 <+69>:	mov    $0x0,%eax
+   0x0000555555554a17 <+74>:	callq  0x555555554750 <printf@plt>          //printf("">>: "")
+   0x0000555555554a1c <+79>:	mov    0x201595(%rip),%rax        # 0x555555755fb8
+   0x0000555555554a23 <+86>:	mov    (%rax),%rax
+   0x0000555555554a26 <+89>:	mov    %rax,%rdx
+   0x0000555555554a29 <+92>:	lea    -0x90(%rbp),%rax
+   0x0000555555554a30 <+99>:	mov    $0x80,%esi
+   0x0000555555554a35 <+104>:	mov    %rax,%rdi
+   0x0000555555554a38 <+107>:	callq  0x555555554770 <fgets@plt>           //fget(-0x90(%rbp), 0x80, stdin)
+   
+        //cycle
+   0x0000555555554a3d <+112>:	movl   $0x0,-0x4(%rbp)                      //-0x4(%rbp) = 0
+   0x0000555555554a44 <+119>:	jmp    0x555555554a6a <set_username+157>
+   0x0000555555554a46 <+121>:	mov    -0x4(%rbp),%eax
+   0x0000555555554a49 <+124>:	cltq
+   0x0000555555554a4b <+126>:	movzbl -0x90(%rbp,%rax,1),%ecx              //  ecx = -0x90(%rbp) + -0x4(%rbp)         
+   0x0000555555554a53 <+134>:	mov    -0x98(%rbp),%rdx                     //
+   0x0000555555554a5a <+141>:	mov    -0x4(%rbp),%eax
+   0x0000555555554a5d <+144>:	cltq
+   0x0000555555554a5f <+146>:	mov    %cl,0x8c(%rdx,%rax,1)                // 0x8c + ( -0x98(%rbp) + -0x4(%rbp)  )     =  -0x90(%rbp) + -0x4(%rbp) 
+   0x0000555555554a66 <+153>:	addl   $0x1,-0x4(%rbp)                      //-0x4(%rbp) ++
+
+   0x0000555555554a6a <+157>:	cmpl   $0x28,-0x4(%rbp)                     //-0x4(%rbp) > $0x28 ,  end cycle 
+   0x0000555555554a6e <+161>:	jg     0x555555554a81 <set_username+180>
+   0x0000555555554a70 <+163>:	mov    -0x4(%rbp),%eax
+   0x0000555555554a73 <+166>:	cltq                                         //В C это обычно представляет приведение от подписанного int к long
+   0x0000555555554a75 <+168>:	movzbl -0x90(%rbp,%rax,1),%eax              //-0x90(%rbp) + -0x4(%rbp)
+   0x0000555555554a7d <+176>:	test   %al,%al                              //=!0, end cycle
+   0x0000555555554a7f <+178>:	jne    0x555555554a46 <set_username+121>
+        //cycle end
+   0x0000555555554a81 <+180>:	mov    -0x98(%rbp),%rax                                          
+   0x0000555555554a88 <+187>:	lea    0x8c(%rax),%rdx
+   0x0000555555554a8f <+194>:	lea    0x165(%rip),%rax        # 0x555555554bfb
+   0x0000555555554a96 <+201>:	mov    %rdx,%rsi
+   0x0000555555554a99 <+204>:	mov    %rax,%rdi
+   0x0000555555554a9c <+207>:	mov    $0x0,%eax
+   0x0000555555554aa1 <+212>:	callq  0x555555554750 <printf@plt>              //printf(">: Welcome, %s", -0x98(%rbp) + 0x8c(%rax))
+   0x0000555555554aa6 <+217>:	leaveq
+   0x0000555555554aa7 <+218>:	retq
+End of assembler dump.
+
+
+
+(gdb) disas
+Dump of assembler code for function set_msg:
+=> 0x0000555555554932 <+0>:	push   %rbp
+   0x0000555555554933 <+1>:	mov    %rsp,%rbp
+   0x0000555555554936 <+4>:	sub    $0x410,%rsp
+   0x000055555555493d <+11>:	mov    %rdi,-0x408(%rbp)                                //наш аргумент -0x408(%rbp) 
+   0x0000555555554944 <+18>:	lea    -0x400(%rbp),%rax
+   0x000055555555494b <+25>:	mov    %rax,%rsi
+   0x000055555555494e <+28>:	mov    $0x0,%eax
+   0x0000555555554953 <+33>:	mov    $0x80,%edx
+   0x0000555555554958 <+38>:	mov    %rsi,%rdi
+   0x000055555555495b <+41>:	mov    %rdx,%rcx
+   0x000055555555495e <+44>:	rep stos %rax,%es:(%rdi)                                //memset(-0x400(%rbp), 0, 0x80)
+   0x0000555555554961 <+47>:	lea    0x265(%rip),%rdi        # 0x555555554bcd
+   0x0000555555554968 <+54>:	callq  0x555555554730 <puts@plt>                        //puts(">: Msg @Unix-Dude")
+   0x000055555555496d <+59>:	lea    0x26b(%rip),%rax        # 0x555555554bdf
+   0x0000555555554974 <+66>:	mov    %rax,%rdi
+   0x0000555555554977 <+69>:	mov    $0x0,%eax
+   0x000055555555497c <+74>:	callq  0x555555554750 <printf@plt>                      //printf(">>: ")
+   0x0000555555554981 <+79>:	mov    0x201630(%rip),%rax        # 0x555555755fb8
+   0x0000555555554988 <+86>:	mov    (%rax),%rax
+   0x000055555555498b <+89>:	mov    %rax,%rdx
+   0x000055555555498e <+92>:	lea    -0x400(%rbp),%rax
+   0x0000555555554995 <+99>:	mov    $0x400,%esi
+   0x000055555555499a <+104>:	mov    %rax,%rdi
+   0x000055555555499d <+107>:	callq  0x555555554770 <fgets@plt>                       //fgets(-0x400(%rbp), 0x400,stdin)
+   0x00005555555549a2 <+112>:	mov    -0x408(%rbp),%rax
+   0x00005555555549a9 <+119>:	mov    0xb4(%rax),%eax
+   0x00005555555549af <+125>:	movslq %eax,%rdx
+   0x00005555555549b2 <+128>:	lea    -0x400(%rbp),%rcx
+   0x00005555555549b9 <+135>:	mov    -0x408(%rbp),%rax
+   0x00005555555549c0 <+142>:	mov    %rcx,%rsi
+   0x00005555555549c3 <+145>:	mov    %rax,%rdi
+   0x00005555555549c6 <+148>:	callq  0x555555554720 <strncpy@plt>                     //strncpy(-0x408(%rbp), -0x400(%rbp), -0x408(%rbp) + 0xb4)
+   0x00005555555549cb <+153>:	leaveq
+   0x00005555555549cc <+154>:	retq
+End of assembler dump.
+
+
+(gdb) disas secret_backdoor
+Dump of assembler code for function secret_backdoor:
+   0x000055555555488c <+0>:	push   %rbp
+   0x000055555555488d <+1>:	mov    %rsp,%rbp
+   0x0000555555554890 <+4>:	add    $0xffffffffffffff80,%rsp
+   0x0000555555554894 <+8>:	mov    0x20171d(%rip),%rax        # 0x555555755fb8
+   0x000055555555489b <+15>:	mov    (%rax),%rax
+   0x000055555555489e <+18>:	mov    %rax,%rdx
+   0x00005555555548a1 <+21>:	lea    -0x80(%rbp),%rax
+   0x00005555555548a5 <+25>:	mov    $0x80,%esi
+   0x00005555555548aa <+30>:	mov    %rax,%rdi
+   0x00005555555548ad <+33>:	callq  0x555555554770 <fgets@plt>       //fgets(-0x80(%rbp), 0x80, stdin)
+   0x00005555555548b2 <+38>:	lea    -0x80(%rbp),%rax
+   0x00005555555548b6 <+42>:	mov    %rax,%rdi
+   0x00005555555548b9 <+45>:	callq  0x555555554740 <system@plt>         //system(-0x80(%rbp))
+   0x00005555555548be <+50>:	leaveq
+   0x00005555555548bf <+51>:	retq
+End of assembler dump.
