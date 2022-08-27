@@ -1,93 +1,56 @@
-int decrypt(int param_1)
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include <stdlib.h>
+
+void decrypt(key)
 {
-  char buf = "Q}|u`sfg~sf{}|a3"; // 0x757c7d51 0x67667360 0x7b66737e 0x33617c7d 0
-  int len;
-  int i;
+	char *crypt = "Q}|u`sfg~sf{}|a3";
+	size_t len;
+	size_t i;
+	
+	len = strlen(crypt);
+	i = 0;
+	
+	while (i < len) {
+		crypt[i] = crypt[i] ^ key;
+		i++;
+	}
+	
+	if (strncmp(crypt, "Congratulations", 17) == 0) {
+    	system("/bin/sh");
+	}
+	else {
+		puts("\nInvalid Password");
+	}
 
-  len = strlen(buf);
-  for (i = 0; i < len; i++)
-  {
-    buf[i] = buf[i] ^ param_1;
-  }
-
-  if (strncmp(buf, "Congratulations!", 0x11))
-  {
-    system("/bin/sh");
-    return;
-  }
-  puts("\nInvalid Password");
+	return ;
 }
 
-void test(int param_1, int param_2)
+void test(int input, int number)
 {
-  int a;
-
-  a = (param_2 - param_1);
-  switch(a) {
-  default:
-    a = rand();
-    decrypt(a);
-    break;
-  case 0x1:
-    decrypt(a);
-    break;
-  case 0x2:
-    decrypt(a);
-    break;
-  case 0x3:
-    decrypt(a);
-    break;
-  case 0x4:
-    decrypt(a);
-    break;
-  case 0x5:
-    decrypt(a);
-    break;
-  case 0x6:
-    decrypt(a);
-    break;
-  case 0x7:
-    decrypt(a);
-    break;
-  case 0x8:
-    decrypt(a);
-    break;
-  case 0x9:
-    decrypt(a);
-    break;
-  case 0x10:
-    decrypt(a);
-    break;
-  case 0x11:
-    decrypt(a);
-    break;
-  case 0x12:
-    decrypt(a);
-    break;
-  case 0x13:
-    decrypt(a);
-    break;
-  case 0x14:
-    decrypt(a);
-    break;
-  case 0x15:
-    decrypt(a);
-  }
-  return;
+	int key;
+	
+	key = number - input;
+	if (key > 21) {
+		decrypt(rand());
+	}
+	decrypt(key);
+	return ;
 }
 
-undefined4 main(void)
+int main(void)
 {
-  uint __seed;
-  int iStack20;
+  int     input;
 
-  __seed = time((time_t *)0x0);
-  srand(__seed);
+  srand(time(0));
+
   puts("***********************************");
   puts("*\t\tlevel03\t\t**");
   puts("***********************************");
   printf("Password:");
-  scanf("%d", &iStack20);
-  test(iStack20,0x1337d00d); //322424845
-  return 0;
+
+  scanf("%d", &input);
+  test(input, 322424845);
+  return (0);
 }

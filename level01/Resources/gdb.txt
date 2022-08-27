@@ -4,7 +4,7 @@ Dump of assembler code for function main:
    0x080484d3 <+3>:	push   %edi
    0x080484d4 <+4>:	push   %ebx
    0x080484d5 <+5>:	and    $0xfffffff0,%esp
-   0x080484d8 <+8>:	sub    $0x60,%esp                               //выделяем память под стек и переменные
+   0x080484d8 <+8>:	sub    $0x60,%esp                          
    0x080484db <+11>:	lea    0x1c(%esp),%ebx
    0x080484df <+15>:	mov    $0x0,%eax                          
    0x080484e4 <+20>:	mov    $0x10,%edx                      
@@ -68,18 +68,18 @@ Dump of assembler code for function verify_user_name:
    0x08048469 <+5>:	sub    $0x10,%esp
    0x0804846c <+8>:	movl   $0x8048690,(%esp)
    0x08048473 <+15>:	call   0x8048380 <puts@plt>
-   0x08048478 <+20>:	mov    $0x804a040,%edx              //это же место в памяти, что и main+81
+   0x08048478 <+20>:	mov    $0x804a040,%edx              
    0x0804847d <+25>:	mov    $0x80486a8,%eax              //  x/s 0x80486a8   ->0x80486a8:	 "dat_wil"
    0x08048482 <+30>:	mov    $0x7,%ecx
    0x08048487 <+35>:	mov    %edx,%esi
    0x08048489 <+37>:	mov    %eax,%edi
    0x0804848b <+39>:	repz cmpsb %es:(%edi),%ds:(%esi)    //strncmpr(a_user_name, "dat_wil", 0x7) 
-   0x0804848d <+41>:	seta   %dl                          //биты устанавливаются относ сравнения >p $dl         
+   0x0804848d <+41>:	seta   %dl                               
    0x08048490 <+44>:	setb   %al
    0x08048493 <+47>:	mov    %edx,%ecx
    0x08048495 <+49>:	sub    %al,%cl
    0x08048497 <+51>:	mov    %ecx,%eax
-   0x08048499 <+53>:	movsbl %al,%eax                     // movsbl: C compiler may use this instruction when a variable of type int8_t needs to be converted to int, which happens automatically on arithmetic and a few other operations (integer promotion).
+   0x08048499 <+53>:	movsbl %al,%eax                     //  int8_t to int
    0x0804849c <+56>:	add    $0x10,%esp
    0x0804849f <+59>:	pop    %esi
    0x080484a0 <+60>:	pop    %edi

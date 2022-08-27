@@ -10,7 +10,7 @@ int main(void)
   puts("***********************************");
   printf("Password:");
     scanf("%d",&a);
-  if (a != 0x149c) {
+  if (a != 0x149c) { //5276
     puts("\nInvalid Password!");
     return (1);
   }
