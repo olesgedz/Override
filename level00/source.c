@@ -1,22 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main(void)
-{
-  int a;
+int main() {
+    puts("***********************************");
+    puts("* \t     -Level00 -\t\t  *");
+    puts("***********************************");
 
-  puts("***********************************");
-  puts("* \t     -Level00 -\t\t  *");
-  puts("***********************************");
-  printf("Password:");
-    scanf("%d",&a);
-  if (a != 0x149c) { //5276
+    printf("Password:");
+
+    int result;
+    scanf("%d", &result);
+
+    if (result == 0x149c) { // 5276
+        puts("\nAuthenticated!");
+        system("/bin/sh");
+        return 0;
+    }
     puts("\nInvalid Password!");
-    return (1);
-  }
-  else {
-    puts("\nAuthenticated!");
-    system("/bin/sh");
-  }
-  return (0);
+    return 1;
 }

