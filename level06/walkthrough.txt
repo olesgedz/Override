@@ -2,7 +2,8 @@ Level06
 
 This program has a call to /bin/sh but it is protected by a number of conditional jumps. We have two inputs: a login string and a serial number (unsigned int).
 
-If the auth() function called by main returns 0, the /bin/sh call will occur. It appears that the auth() function creates a hash number based on the login string then compares it to our serial number and returns zero if the hashed login and Serial number are the same.
+If the auth() function called by main returns 0, the /bin/sh call will occur. It appears that the auth() function creates a hash number based on the login string then compares it to our serial number
+and returns zero if the hashed login and Serial number are the same.
 
 A few conditions for the login string to be valid:
 
@@ -21,7 +22,7 @@ gdb level06
 -> Enter Serial: 0	; not important
 
 Breakpoint 1, 0x080487b5 in auth ()
-(gdb) jump *0x080487ed
+(gdb) jump *0x080487ed   // => 0x08048866 <+286>:	cmp    -0x10(%ebp),%eax jump to compare
 (gdb)  p *(int*)($ebp-0x10)
 $1 = 6233767
 

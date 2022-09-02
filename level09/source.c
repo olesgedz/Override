@@ -39,7 +39,7 @@ void set_username(t_message *message) {
 
     *(int32_t *)(local_buffer + 140) = 0;
 
-    for (i = 0; i <= 0x28 && local_buffer[i]; i++) {
+    for (i = 0; i <= 0x28 && local_buffer[i]; i++) { //41
         message->username[i] = local_buffer[i];
     }
 

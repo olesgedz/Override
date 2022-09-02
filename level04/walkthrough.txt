@@ -25,7 +25,7 @@ Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac
 
 Program received signal SIGSEGV, Segmentation fault.
 [Switching to process 2067]
-0x41326641 in ?? ()
+0x41326641 in ?? () = 156
 
 Lets find libc system() function and string "/bin/sh" in memory using gdb.
 p system

