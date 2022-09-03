@@ -6,7 +6,8 @@ We also know the following:
 
 the program creates a data table, where it stores numbers at indexes
 some indexes (index % 3 == 0) are protected
-Vulnerability: no check is performed on indexes and an unsigned int table is stored on the stack. This means we can read and store in stack memory.
+Vulnerability: no check is performed on indexes and an unsigned int table is stored on the stack. 
+This means we can read and store in stack memory.
 
 Our plan is to do a ret2libc attack, by overwriting the index containing EIP with a call to system() + exit() + "/bin/sh".
 
@@ -74,7 +75,8 @@ Next, we need to calculate the 'index' of our EIP address.
 Ah... index 114 is protected: 114 % 3 = 0. We can't store a number at this index.
 
 Use maxint overflow to access protected indexes
-On lines 152-158 of the disassembled binary, we see that the table is accessed as data[index * 4]. Since the index is an unsigned int and multiplied by 4, we can overflow uintmax to give the index where we want to go.
+On lines 152-158 of the disassembled binary, we see that the table is accessed as data[index * 4]. Since the index is an unsigned int
+and multiplied by 4, we can overflow uintmax to give the index where we want to go.
 
 0x100000000 = 2^32
 [size of uintmax]

@@ -78,7 +78,7 @@ comparing seven simbols of name
 (gdb) printf "%s == %s", $edi, $esi
 dat_wil == data
 
-We got  correct name "dat_will"
+We got  correct name "dat_wil"
 
 Second fget isnt protected so we are going to exploit it
 0x08048574 <+164>:	call   0x8048370 <fgets@plt>

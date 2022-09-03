@@ -4,7 +4,7 @@ If you look at source.c, it might look little bit frightening. In fact the progr
 
 It takes one input: an integer;
 This integer is subtracted to 0x1337d00d (or decimal 322424845);
-Then we have a switch cases with the subtraction result, cases are: 1, 2, 3, 4, 5, 6, 7, 8, 9, 16, 17, 18, 19, 20, 21 - each cases are calling decrypt with 1, 2, 3, and so on;
+Then we have a switch cases with the subtraction result, cases are: 1, 2, 3, 4, 5, 6, 7, 8, 9, ... ,16, 17, 18, 19, 20, 21 - each cases are calling decrypt with 1, 2, 3, and so on;
 decrypt do XOR operation on each character of the string "Q}|u`sfg~sf{}|a3" with the subtraction result we get earlier;
 Finally it compares the new string with "Congratulations!", if it matches: win!
 
@@ -17,7 +17,7 @@ Finally it compares the new string with "Congratulations!", if it matches: win!
 
 We know that our input must match one of the cases. Thus we can generate the list of integers to be tested:
 
->>> l = [1,2,3,4,5,6,7,8,9,16,17,18,19,20,21]
+>>> l = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]
 >>> a2 = 0x1337d00d
 >>> a2
 322424845
